@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 该程序是从demo.py复制过来，稍加改动得到的。
 用于得到群聊列表。
@@ -5,7 +6,6 @@
 '''
 
 
-# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import wechat
@@ -14,7 +14,7 @@ import time
 import sys
 from wechat import WeChatManager, MessageType
 
-wechat_manager = WeChatManager(libs_path='../../libs')
+wechat_manager = WeChatManager(libs_path='../../../libs')
 
 
 # 这里测试函数回调
