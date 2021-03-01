@@ -9,9 +9,9 @@ from wechat import WeChatManager, MessageType
 import os
 from tools.message import Message
 import jieba
+import my_response
 
 wechat_manager = WeChatManager(libs_path='../../libs')
-
 
 # wlc
 def get_common_words():
@@ -37,6 +37,10 @@ def get_common_words():
             # print(repr(msg.msg).strip("'"))   #按理说用str(msg.msg)就行，但是有些输入法自带的表情是Unicode编码的，会报错。
             add_macros()
             add_word(jieba.lcut(msg.msg))
+
+
+
+
 
 
 # wlc
@@ -76,15 +80,18 @@ def on_connect(client_id):
 
 @wechat.RECV_CALLBACK(in_class=False)
 def on_recv(client_id, message_type, message_data):  # 和LoginTipBot.on_message()效果差不多
-    # message_data是dict类型
+    # message_data除了第一条是str，都是dict类型
+    # 建议在jilu.txt里面查看！
+
     '''
 		发送/收到了新消息后，会触发该函数
 		在这里添加我的功能！！
 	'''
 
-    global friends
+    global friends, target, my_remark
     if message_type == MessageType.MT_USER_LOGIN:
         friends += [message_data]  # 把自己的信息加入到friends里
+        my_remark = message_data['nickname']
 
     elif message_type == MessageType.MT_RECV_TEXT_MSG:
         '''
@@ -114,11 +121,22 @@ def on_recv(client_id, message_type, message_data):  # 和LoginTipBot.on_message
             print("----")
 
     # wlc
+    # print("data:",message_data)
+    # print("type",type(message_data))
+
     # 智障的自动回复
-    # if  message_data['to_wxid'] != message_data['from_wxid']: #不是自己和自己聊天
-    #	 gen_msg = message_data['msg']+'是啥意思'
-    # to_wxid = message_data['from_wxid']
-    # wechat_manager.send_text(client_id, to_wxid, gen_msg)
+    # try:
+    #     print(get_remark(message_data['from_wxid']))
+    # except:
+    #     pass
+    if  message_type == MessageType.MT_RECV_TEXT_MSG and  \
+            get_remark(message_data['from_wxid']) != my_remark \
+            and get_remark(message_data['from_wxid']) in target \
+            and message_data["room_wxid"] == "":
+        # 不是自己和自己聊天# 在自动回复的对象中# 是私聊
+        gen_msg = my_response.intelligent_response(message_data['msg'])
+        to_wxid = message_data['from_wxid']
+        wechat_manager.send_text(client_id, to_wxid, gen_msg)
 
     elif message_type == MessageType.MT_RECV_REVOKE_MSG:
         get_recalled_msg(message_data)
@@ -186,7 +204,7 @@ def get_recalled_msg(message_data):
         for data in f:
             tt = data.split('\t')[-1]
             msg = eval(tt.strip(' message:'))
-            if type(msg) == dict:
+            if isinstance(msg, dict):
                 try:
                     if msg['msgid'] in message_data['raw_msg'] and showInConsole:
                         print("[recalled TEXT]---")
@@ -201,11 +219,17 @@ def get_recalled_msg(message_data):
                 except:
                     pass
 
+#wlc
+def get_common_words_and_show():
+    get_common_words()
+    l_word_times = list(word_times.items())
+    l_word_times.sort(key=lambda w: w[1], reverse=1)
+    print(l_word_times[0:20])
 
 if __name__ == "__main__":
     showInConsole = 1  # 表示是否把信息显示在console里
     file_exist = 1  # 表示friends.txt,chatrooms.txt文件是否存在
-
+    target = ["黄炜","超"]
     word_times = dict()
     # 获取好友、群聊的信息
     friends = dict()
@@ -224,12 +248,12 @@ if __name__ == "__main__":
     wechat_manager.add_callback_handler(bot)
     wechat_manager.manager_wechat(smart=True)
     print("ok!")
-    get_common_words()
-    l_word_times = list(word_times.items())
-    l_word_times.sort(key=lambda w: w[1], reverse=1)
-    print(l_word_times[0:20])
+
+    #提取关键词功能
+    # get_common_words_and_show()
 
     # 阻塞主线程
     while True:
         time.sleep(0.5)
+		
     # break

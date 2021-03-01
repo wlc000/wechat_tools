@@ -34,7 +34,7 @@ class LoginTipBot(wechat.CallbackHandler):
 		# 判断登录成功后，就向文件助手发条消息
 		if message_type == MessageType.MT_USER_LOGIN:
 			time.sleep(2)
-			wechat_manager.get_friends(client_id)
+			# wechat_manager.get_friends(client_id)
 			
 
 if __name__ == "__main__":
